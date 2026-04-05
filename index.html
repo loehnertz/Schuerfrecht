@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNTERGRUND</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #0a0a0c;
+      font-family: 'JetBrains Mono', monospace;
+      color: #a09080;
+      cursor: crosshair;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #game-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+    }
+
+    #ui-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Depth slider panel — right edge */
+    #depth-panel {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+      padding: 16px 10px;
+      background: rgba(20, 18, 16, 0.85);
+      border: 1px solid rgba(180, 140, 60, 0.2);
+      border-radius: 2px;
+      backdrop-filter: blur(4px);
+    }
+
+    #depth-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #a09080;
+    }
+
+    #depth-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      writing-mode: vertical-lr;
+      direction: rtl;
+      width: 6px;
+      height: 300px;
+      background: rgba(180, 140, 60, 0.12);
+      border: 1px solid rgba(180, 140, 60, 0.15);
+      border-radius: 1px;
+      outline: none;
+      cursor: ns-resize;
+    }
+
+    #depth-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 10px;
+      background: #b48c3c;
+      border: none;
+      border-radius: 1px;
+      cursor: ns-resize;
+      box-shadow: 0 0 8px rgba(180, 140, 60, 0.4);
+      transition: box-shadow 0.2s;
+    }
+
+    #depth-slider::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 14px rgba(180, 140, 60, 0.7);
+    }
+
+    #depth-slider::-moz-range-thumb {
+      width: 20px;
+      height: 10px;
+      background: #b48c3c;
+      border: none;
+      border-radius: 1px;
+      cursor: ns-resize;
+      box-shadow: 0 0 8px rgba(180, 140, 60, 0.4);
+    }
+
+    #depth-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #d4a84b;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 8px rgba(212, 168, 75, 0.3);
+    }
+
+    #depth-unit {
+      font-size: 9px;
+      font-weight: 400;
+      color: #a09080;
+      letter-spacing: 1px;
+    }
+
+    /* Status bar — bottom left */
+    #status-bar {
+      position: absolute;
+      bottom: 16px;
+      left: 20px;
+      display: flex;
+      gap: 24px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #706050;
+    }
+
+    #status-bar .val {
+      color: #a09080;
+      font-weight: 600;
+    }
+
+    /* Controls hint — bottom right */
+    #controls-hint {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: rgba(160, 144, 128, 0.35);
+      text-transform: uppercase;
+      text-align: right;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <div id="ui-overlay">
+    <div id="depth-panel">
+      <span id="depth-label">DEPTH</span>
+      <input type="range" id="depth-slider" min="0" max="128" value="128" step="0.5">
+      <span id="depth-value">0</span>
+      <span id="depth-unit">METERS</span>
+    </div>
+
+    <div id="status-bar">
+      <span>FPS <span class="val" id="fps-display">--</span></span>
+      <span>TRIS <span class="val" id="tri-display">--</span></span>
+    </div>
+
+    <div id="controls-hint">
+      RIGHT-DRAG / CTRL+DRAG ORBIT · Q/E SNAP · SCROLL ZOOM · CTRL+SCROLL DEPTH · WASD PAN · CLICK MINE
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
