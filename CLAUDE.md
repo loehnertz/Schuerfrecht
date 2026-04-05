@@ -16,6 +16,7 @@ Before starting any work, read these files in order:
 Follow the current roadmap phase. Do not skip ahead. Complete all acceptance criteria before moving to the next phase.
 
 4. `@docs/LEARNINGS.md` — pitfalls and hard-won knowledge from previous phases (read before making changes)
+5. `@docs/KNOWN_ISSUES.md` — known bugs and limitations in the current build
 
 After completing each phase, append new learnings to `@docs/LEARNINGS.md` (or update existing entries if understanding
 has evolved). This prevents rediscovery of the same issues across context windows.
