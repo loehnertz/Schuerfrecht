@@ -1,13 +1,17 @@
 import { WORLD_SEED, WORLD_CHUNKS_X, WORLD_CHUNKS_Y, WORLD_CHUNKS_Z } from './core/Config.js';
 import { getState } from './core/GameState.js';
+import eventBus from './core/EventBus.js';
 import sceneManager from './rendering/SceneManager.js';
 import cameraController from './rendering/CameraController.js';
 import lightingSystem from './rendering/LightingSystem.js';
 import cutawaySystem from './rendering/CutawayShader.js';
 import depthSlider from './ui/DepthSlider.js';
 import inputManager from './input/InputManager.js';
+import selectionManager from './input/SelectionManager.js';
+import commandSystem from './input/CommandSystem.js';
 import { initTerrain } from './voxel/TerrainGenerator.js';
 import voxelWorld from './voxel/VoxelWorld.js';
+import machineController from './machines/MachineController.js';
 
 // --- Init ---
 
@@ -25,10 +29,18 @@ depthSlider.init();
 voxelWorld.init();
 voxelWorld.loadInitialChunks(WORLD_CHUNKS_X, WORLD_CHUNKS_Y, WORLD_CHUNKS_Z);
 
-// Input — debug mining
-inputManager.init(camera, (wx, wy, wz) => {
-  voxelWorld.carveAt(wx, wy, wz);
+// Input systems
+inputManager.init(camera);
+selectionManager.init();
+commandSystem.init();
+
+// Machine — subscribe to carve events before spawning
+eventBus.on('machine:carve', ({ x, y, z, radius }) => {
+  voxelWorld.carveAt(x, y, z, radius);
 });
+
+// Spawn drill rig in the entrance cavern
+machineController.init(sceneManager.scene);
 
 // Set initial cutaway from state
 sceneManager.setCutawayDepth(getState().cutawayDepth);
@@ -37,6 +49,7 @@ sceneManager.setCutawayDepth(getState().cutawayDepth);
 
 const fpsDisplay = document.getElementById('fps-display');
 const triDisplay = document.getElementById('tri-display');
+const stateDisplay = document.getElementById('machine-state');
 
 let lastTime = performance.now();
 let frameCount = 0;
@@ -59,7 +72,20 @@ function gameLoop(now) {
     fpsAccumulator = 0;
   }
 
-  // Update
+  // Update machine — wrapped so a bug can't kill camera/rendering
+  try {
+    machineController.update(dt);
+  } catch (err) {
+    console.error('[gameLoop] machine update error:', err);
+    machineController.state = 'IDLE';
+  }
+
+  // Update machine status display
+  if (stateDisplay) {
+    stateDisplay.textContent = machineController.state;
+  }
+
+  // Update camera
   cameraController.update(dt);
 
   // Render
