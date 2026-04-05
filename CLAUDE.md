@@ -2,8 +2,8 @@
 
 ## Project
 
-Underground mining game — browser-based, isometric, Three.js. The player operates tracked mining machines to carve into
-voxel terrain.
+Schürfrecht — an underground mining game. Browser-based, isometric, Three.js. The player operates tracked mining
+machines to carve into voxel terrain.
 
 ## Required Reading
 
