@@ -117,6 +117,33 @@
       letter-spacing: 1px;
     }
 
+    #depth-lock {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(160, 144, 128, 0.45);
+      background: transparent;
+      border: 1px solid rgba(180, 140, 60, 0.12);
+      border-radius: 1px;
+      padding: 4px 6px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s, border-color 0.15s, text-shadow 0.15s;
+      user-select: none;
+    }
+
+    #depth-lock:hover {
+      color: #a09080;
+      border-color: rgba(180, 140, 60, 0.3);
+    }
+
+    #depth-lock.locked {
+      color: #d4a84b;
+      border-color: rgba(212, 168, 75, 0.5);
+      text-shadow: 0 0 8px rgba(212, 168, 75, 0.35);
+    }
+
     /* Game title — top edge */
     #game-title {
       position: absolute;
@@ -170,6 +197,7 @@
       <input type="range" id="depth-slider" min="0" max="128" value="128" step="0.5">
       <span id="depth-value">0</span>
       <span id="depth-unit">METERS</span>
+      <button id="depth-lock" title="Lock/unlock depth slider">LOCK</button>
     </div>
 
     <div id="status-bar">
