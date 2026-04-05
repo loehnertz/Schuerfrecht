@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import sceneManager from '../rendering/SceneManager.js';
+import { getState } from '../core/GameState.js';
 
 class InputManager {
   constructor() {
@@ -19,7 +20,7 @@ class InputManager {
 
   _onClick(e) {
     // Ignore clicks on UI elements
-    if (e.target.id === 'depth-slider') return;
+    if (e.target.closest('#depth-panel')) return;
     // Ignore non-left-click and modifier keys (Ctrl+click = orbit)
     if (e.button !== 0) return;
     if (e.ctrlKey || e.metaKey) return;
@@ -33,11 +34,14 @@ class InputManager {
     const meshes = sceneManager.getTerrainMeshes();
     const intersections = this._raycaster.intersectObjects(meshes);
 
-    if (intersections.length > 0) {
-      const hit = intersections[0].point;
-      if (this._onCarve) {
-        this._onCarve(hit.x, hit.y, hit.z);
-      }
+    // Only hit geometry that is at or below the cutaway plane — terrain above
+    // the cutaway is visually clipped but still exists in the scene for
+    // raycasting purposes, so we must filter it out manually.
+    const cutawayDepth = getState().cutawayDepth;
+    const hit = intersections.find(i => i.point.y <= cutawayDepth);
+
+    if (hit && this._onCarve) {
+      this._onCarve(hit.point.x, hit.point.y, hit.point.z);
     }
   }
 }
