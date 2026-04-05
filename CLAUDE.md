@@ -17,6 +17,9 @@ Follow the current roadmap phase. Do not skip ahead. Complete all acceptance cri
 
 4. `@docs/LEARNINGS.md` — pitfalls and hard-won knowledge from previous phases (read before making changes)
 
+After completing each phase, append new learnings to `@docs/LEARNINGS.md` (or update existing entries if understanding
+has evolved). This prevents rediscovery of the same issues across context windows.
+
 ## Working Style
 
 - Build the simplest working version first, then iterate
