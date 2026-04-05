@@ -15,6 +15,8 @@ Before starting any work, read these files in order:
 
 Follow the current roadmap phase. Do not skip ahead. Complete all acceptance criteria before moving to the next phase.
 
+4. `@docs/LEARNINGS.md` — pitfalls and hard-won knowledge from previous phases (read before making changes)
+
 ## Working Style
 
 - Build the simplest working version first, then iterate
