@@ -11,8 +11,8 @@ class DepthSlider {
     this.valueDisplay = document.getElementById('depth-value');
     this.lockBtn = document.getElementById('depth-lock');
 
-    // Initial state: show the surface with entrance cavern
-    this.slider.value = TERRAIN_SURFACE_Y + 4;
+    // Initial state: 9 meters below surface — entrance cavern is visible
+    this.slider.value = TERRAIN_SURFACE_Y - 9;
     this._update();
 
     this.slider.addEventListener('input', () => {

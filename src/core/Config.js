@@ -97,10 +97,43 @@ export const ORE_PARAMS = {
   [Material.CRYSTAL]:   { minY: 0,  maxY: 30, threshold: 0.80, scale: 0.05 },
 };
 
-// Entrance cavern — tall enough to cut through dirt into stone layer
-export const ENTRANCE_RADIUS_X = 12;
-export const ENTRANCE_RADIUS_Y = 14;
-export const ENTRANCE_RADIUS_Z = 12;
+// Entrance cavern — wider and flatter for machine maneuvering room
+export const ENTRANCE_RADIUS_X = 18;
+export const ENTRANCE_RADIUS_Y = 12;
+export const ENTRANCE_RADIUS_Z = 18;
 
 // Worker pool
 export const WORKER_COUNT = 2;
+
+// --- Machine constants ---
+export const MACHINE_SPEED = 5;             // voxels per second
+export const MACHINE_MAX_SLOPE_DEG = 35;    // max traversable slope in degrees
+export const MACHINE_HEIGHT_OFFSET = 0.0;   // tracks sit on the surface
+export const MACHINE_TURN_SPEED = 3.0;      // radians per second
+
+// Drill rig
+export const DRILL_REACH = 3.5;             // boom length (how far drill extends)
+export const DRILL_SPIN_SPEED = 8.0;        // radians per second
+export const DRILL_EXTEND_SPEED = 1.0;      // boom elevation lerp speed (rad/s)
+export const CARVE_INTERVAL_BASE = 0.3;     // seconds between carve pulses (× hardness)
+export const MACHINE_CARVE_RADIUS = 2.0;    // radius of each carve sphere
+export const DRILL_BOOM_MIN_ANGLE = -1.1;   // min boom elevation (radians, negative = down, ~63°)
+export const DRILL_BOOM_MAX_ANGLE = 0.5;    // max boom elevation (radians, positive = up, ~29°)
+
+// Pathfinding
+export const PATHFIND_STEP = 1;             // XZ grid step in voxels
+export const PATHFIND_MARGIN = 10;          // extra cells beyond start/end bounding box
+
+// Machine headlight
+export const HEADLIGHT_COLOR = 0xffe8c0;
+export const HEADLIGHT_INTENSITY = 2.5;
+export const HEADLIGHT_DISTANCE = 40;
+export const HEADLIGHT_ANGLE = Math.PI / 5;
+export const HEADLIGHT_PENUMBRA = 0.4;
+
+// Machine colors
+export const MACHINE_BODY_COLOR = 0xd4a017;    // industrial yellow
+export const MACHINE_CABIN_COLOR = 0xb08a15;   // slightly darker yellow
+export const MACHINE_TRACK_COLOR = 0x1a1a1a;   // near-black rubber
+export const MACHINE_METAL_COLOR = 0x888888;    // metallic gray
+export const MACHINE_ACCENT_COLOR = 0x333333;   // dark accent

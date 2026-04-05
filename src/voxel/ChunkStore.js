@@ -50,13 +50,15 @@ class ChunkStore {
     const key = this._key(cx, cy, cz);
     this.dirtyChunks.add(key);
 
-    // Mark neighbor chunks dirty if we're near a border
-    if (lx === 0)              this.dirtyChunks.add(this._key(cx - 1, cy, cz));
-    if (lx === CHUNK_SIZE - 1) this.dirtyChunks.add(this._key(cx + 1, cy, cz));
-    if (ly === 0)              this.dirtyChunks.add(this._key(cx, cy - 1, cz));
-    if (ly === CHUNK_SIZE - 1) this.dirtyChunks.add(this._key(cx, cy + 1, cz));
-    if (lz === 0)              this.dirtyChunks.add(this._key(cx, cy, cz - 1));
-    if (lz === CHUNK_SIZE - 1) this.dirtyChunks.add(this._key(cx, cy, cz + 1));
+    // Mark neighbor chunks dirty if we're near a border.
+    // Marching cubes uses +1 padded overlap, so voxels at positions 0-1 and 14-15
+    // affect the neighboring chunk's mesh.
+    if (lx <= 1)              this.dirtyChunks.add(this._key(cx - 1, cy, cz));
+    if (lx >= CHUNK_SIZE - 2) this.dirtyChunks.add(this._key(cx + 1, cy, cz));
+    if (ly <= 1)              this.dirtyChunks.add(this._key(cx, cy - 1, cz));
+    if (ly >= CHUNK_SIZE - 2) this.dirtyChunks.add(this._key(cx, cy + 1, cz));
+    if (lz <= 1)              this.dirtyChunks.add(this._key(cx, cy, cz - 1));
+    if (lz >= CHUNK_SIZE - 2) this.dirtyChunks.add(this._key(cx, cy, cz + 1));
   }
 
   /**

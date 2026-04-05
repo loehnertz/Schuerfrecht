@@ -3,7 +3,7 @@ import eventBus from './EventBus.js';
 
 const state = {
   seed: WORLD_SEED,
-  cutawayDepth: TERRAIN_SURFACE_Y + 4,
+  cutawayDepth: TERRAIN_SURFACE_Y - 9,
   camera: {
     azimuth: CAMERA_INITIAL_AZIMUTH,
     zoom: CAMERA_ZOOM,
