@@ -73,6 +73,13 @@ class SceneManager {
     return [...this.terrainMeshes.values()];
   }
 
+  isTerrainMesh(obj) {
+    for (const mesh of this.terrainMeshes.values()) {
+      if (mesh === obj) return true;
+    }
+    return false;
+  }
+
   render(camera) {
     this.renderer.render(this.scene, camera);
   }
