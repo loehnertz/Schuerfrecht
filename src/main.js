@@ -11,7 +11,11 @@ import selectionManager from './input/SelectionManager.js';
 import commandSystem from './input/CommandSystem.js';
 import { initTerrain } from './voxel/TerrainGenerator.js';
 import voxelWorld from './voxel/VoxelWorld.js';
-import machineController from './machines/MachineController.js';
+import machineManager from './machines/MachineManager.js';
+import { DrillRigController } from './machines/DrillRigController.js';
+import { ExcavatorController } from './machines/ExcavatorController.js';
+import debrisSystem from './terrain/DebrisSystem.js';
+import physicsWorld from './physics/PhysicsWorld.js';
 
 // --- Init ---
 
@@ -29,6 +33,9 @@ depthSlider.init();
 voxelWorld.init();
 voxelWorld.loadInitialChunks(WORLD_CHUNKS_X, WORLD_CHUNKS_Y, WORLD_CHUNKS_Z);
 
+// Debris system
+debrisSystem.init(sceneManager.scene);
+
 // Input systems
 inputManager.init(camera);
 selectionManager.init();
@@ -36,20 +43,50 @@ commandSystem.init();
 
 // Machine — subscribe to carve events before spawning
 eventBus.on('machine:carve', ({ x, y, z, radius }) => {
-  voxelWorld.carveAt(x, y, z, radius);
+  const result = voxelWorld.carveAt(x, y, z, radius);
+  if (result.volume > 0.05) {
+    debrisSystem.addDebrisBelow(x, y, z, result.volume, result.material);
+    debrisSystem.spawnHeroChunks(x, y, z, result.volume, result.material);
+  }
 });
 
-// Spawn drill rig in the entrance cavern
-machineController.init(sceneManager.scene);
+// Spawn machines in the entrance cavern
+const drillRig = new DrillRigController();
+drillRig.init(sceneManager.scene);
+machineManager.addMachine(drillRig);
+
+const excavator = new ExcavatorController();
+excavator.init(sceneManager.scene);
+machineManager.addMachine(excavator);
 
 // Set initial cutaway from state
 sceneManager.setCutawayDepth(getState().cutawayDepth);
+
+// Initialize physics (async — game loop runs without it until ready)
+physicsWorld.init().then(() => {
+  console.log('[init] Rapier physics ready');
+  debrisSystem.initPhysics(physicsWorld);
+}).catch(err => {
+  console.error('[init] Rapier failed to load:', err);
+});
 
 // --- Game Loop ---
 
 const fpsDisplay = document.getElementById('fps-display');
 const triDisplay = document.getElementById('tri-display');
+const machineTypeDisplay = document.getElementById('machine-type');
 const stateDisplay = document.getElementById('machine-state');
+
+// Update machine status on selection change
+eventBus.on('machine:selected', ({ controller }) => {
+  if (machineTypeDisplay) {
+    machineTypeDisplay.textContent = controller.machineType === 'drill' ? 'DRILL RIG' : controller.machineType.toUpperCase();
+  }
+});
+eventBus.on('machine:deselected', () => {
+  if (machineTypeDisplay) machineTypeDisplay.textContent = '--';
+  if (stateDisplay) stateDisplay.textContent = '--';
+});
 
 let lastTime = performance.now();
 let frameCount = 0;
@@ -72,17 +109,17 @@ function gameLoop(now) {
     fpsAccumulator = 0;
   }
 
-  // Update machine — wrapped so a bug can't kill camera/rendering
-  try {
-    machineController.update(dt);
-  } catch (err) {
-    console.error('[gameLoop] machine update error:', err);
-    machineController.state = 'IDLE';
-  }
+  // Update all machines
+  machineManager.update(dt);
 
-  // Update machine status display
-  if (stateDisplay) {
-    stateDisplay.textContent = machineController.state;
+  // Step physics and update debris (hero chunks + heightmap meshes)
+  physicsWorld.step(dt);
+  debrisSystem.update(dt);
+  debrisSystem.updateMeshes();
+
+  // Update machine status display for selected machine
+  if (stateDisplay && selectionManager.selected) {
+    stateDisplay.textContent = selectionManager.selected.state;
   }
 
   // Update camera
