@@ -133,3 +133,41 @@ for targets far above or below the machine. Always include the Y component in re
 
 When `commandMove` overrides an in-progress mine operation, it must clear `_mineTarget`, `_mineNormal`, and
 `_fineMining`. Otherwise the mine indicator stays visible and stale mine state persists.
+
+## Debris System (Phase 3)
+
+### Debris heightmap base Y must be stored per-cell
+
+The debris heightmap stores depth, but rendering needs absolute Y. Probing terrain surface from Y=128 hits the
+terrain ceiling, not the cavern floor. You MUST store the floor Y at debris-deposit time (when `addDebrisBelow` is
+called) and use that stored value for rendering. The `_baseY` array tracks this per XZ cell.
+
+### Circular imports between DebrisSystem and Traversability
+
+DebrisSystem imports `surfaceProbeFrom` from Traversability, and Traversability imports `debrisSystem.getDebrisDepth`
+for pathfinding. This works in ES modules because both export singletons that are initialized before any runtime
+calls happen. But be careful not to call cross-module functions during module evaluation (top-level code).
+
+### Rapier WASM loads asynchronously — design for graceful degradation
+
+`RAPIER.init()` fetches and compiles the WASM module. The game loop starts immediately without waiting. The debris
+system checks `this._physics?.ready` before spawning hero chunks — if Rapier isn't loaded yet, debris goes straight
+to the heightmap (no hero chunks). This also makes testing the heightmap independently of physics easy.
+
+### Hero chunk ground collision uses flat planes, not terrain
+
+Creating Rapier heightfield colliders for the voxel terrain would be expensive and complex. Instead, static cuboid
+planes are created at integer Y levels near carve points. Chunks may clip through sloped terrain slightly but it's
+barely noticeable since they're short-lived. The architecture doc confirms: "don't simulate what you can fake."
+
+### Volume conservation: debris = 40% of carved volume
+
+Not all carved voxels become visible debris — some is "dust." Using 40% of carve volume for heightmap debris
+(plus 60% distributed to hero chunks that eventually merge in) prevents unrealistically large debris piles from
+small carves. The `addDebrisBelow` call scales volume by 0.4.
+
+### Excavator turret angle is relative to body rotation
+
+The turret pivot rotates in Y relative to the machine body. When computing the turret target angle to face a world
+target, you must subtract the machine's current Y rotation: `turretTarget = worldAngle - bodyRotation`. Forgetting
+this makes the turret point in the wrong direction when the machine body isn't facing forward.
