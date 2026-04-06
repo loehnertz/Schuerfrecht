@@ -61,6 +61,11 @@ class DrillRigController {
     this._mineIndicator = null;
     this._mineIndicatorTime = 0;
 
+    // Move target indicator
+    this._moveIndicator = null;
+    this._moveIndicatorTime = 0;
+    this._moveTarget = null;
+
     // Event listener
     this._onCommand = (cmd) => this._handleCommand(cmd);
   }
@@ -95,8 +100,9 @@ class DrillRigController {
     // Create selection ring (hidden initially)
     this._createSelectionRing();
 
-    // Create mine target indicator (added to scene, not to machine group)
+    // Create target indicators (added to scene, not to machine group)
     this._createMineIndicator(scene);
+    this._createMoveIndicator(scene);
 
     // Register with machine registry
     machineRegistry.register(this);
@@ -202,6 +208,34 @@ class DrillRigController {
     }
   }
 
+  _createMoveIndicator(scene) {
+    const geo = new THREE.RingGeometry(0.5, 0.8, 16);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x4488ff, side: THREE.DoubleSide,
+      transparent: true, opacity: 0.0, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+    });
+    this._moveIndicator = new THREE.Mesh(geo, mat);
+    this._moveIndicator.visible = false;
+    this._moveIndicator.renderOrder = 1;
+    scene.add(this._moveIndicator);
+  }
+
+  _updateMoveIndicator(dt) {
+    if (this._moveTarget && this.state === 'MOVING') {
+      this._moveIndicator.visible = true;
+      this._moveIndicatorTime += dt;
+      const pulse = Math.sin(this._moveIndicatorTime * 3) * 0.15 + 0.35;
+      this._moveIndicator.material.opacity = pulse;
+      this._moveIndicator.position.copy(this._moveTarget);
+      this._moveIndicator.rotation.y += dt * 0.8;
+    } else {
+      this._moveIndicator.visible = false;
+      this._moveIndicatorTime = 0;
+    }
+  }
+
   setSelected(selected) {
     this._selected = selected;
     this._selectionRing.visible = selected;
@@ -231,8 +265,9 @@ class DrillRigController {
         break;
     }
 
-    // Update mine target indicator
+    // Update target indicators
     this._updateMineIndicator(dt);
+    this._updateMoveIndicator(dt);
 
     // Apply position and rotation to group
     this.group.position.copy(this.position);
@@ -251,6 +286,7 @@ class DrillRigController {
     if (!this._path || this._pathIndex >= this._path.length) {
       this.state = this._nextStateAfterMove;
       this._path = null;
+      this._moveTarget = null;
       return;
     }
 
@@ -264,6 +300,7 @@ class DrillRigController {
       if (this._pathIndex >= this._path.length) {
         this.state = this._nextStateAfterMove;
         this._path = null;
+        this._moveTarget = null;
         return;
       }
       return;
@@ -495,6 +532,9 @@ class DrillRigController {
       this._mineNormal = null;
       this._fineMining = false;
       this._approachTime = 0;
+      // Store move destination for indicator
+      const dest = path[path.length - 1];
+      this._moveTarget = new THREE.Vector3(dest.x, dest.y + 0.15, dest.z);
       this.state = 'MOVING';
     } else {
       console.warn('[Machine] move failed: no path to', targetX.toFixed(1), targetZ.toFixed(1));

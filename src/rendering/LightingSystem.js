@@ -17,12 +17,12 @@ class LightingSystem {
     const centerX = (WORLD_CHUNKS_X * CHUNK_SIZE) / 2;
     const centerZ = (WORLD_CHUNKS_Z * CHUNK_SIZE) / 2;
 
-    // Ambient — dim base so machines are the main light source
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
+    // Ambient — enough to see terrain in the pit, machines provide extra
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(this.ambientLight);
 
-    // Hemisphere — subtle warm top / cool bottom for depth cue
-    this.hemisphereLight = new THREE.HemisphereLight(0xaa9977, 0x334466, 0.25);
+    // Hemisphere — warm top / cool bottom for depth cue
+    this.hemisphereLight = new THREE.HemisphereLight(0xaa9977, 0x334466, 0.35);
     scene.add(this.hemisphereLight);
 
     // Strong directional — simulates surface daylight filtering down

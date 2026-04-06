@@ -28,8 +28,8 @@ class SceneManager {
 
     // Scene
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a0a0c);
-    this.scene.fog = new THREE.FogExp2(0x0a0a0e, FOG_DENSITY);
+    this.scene.background = new THREE.Color(0x15130f);
+    this.scene.fog = new THREE.FogExp2(0x15130f, FOG_DENSITY);
 
     // Terrain material — Lambert for good visibility + flat shading for rocky feel
     this.terrainMaterial = new THREE.MeshLambertMaterial({

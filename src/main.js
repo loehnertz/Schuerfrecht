@@ -48,6 +48,8 @@ eventBus.on('machine:carve', ({ x, y, z, radius }) => {
     debrisSystem.addDebrisBelow(x, y, z, result.volume, result.material);
     debrisSystem.spawnHeroChunks(x, y, z, result.volume, result.material);
   }
+  // Update debris baseY if terrain was carved underneath existing debris
+  debrisSystem.refreshBaseYNear(x, y, z, radius);
 });
 
 // Spawn machines in the entrance cavern

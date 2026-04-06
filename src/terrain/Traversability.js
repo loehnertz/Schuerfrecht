@@ -84,10 +84,12 @@ export function findPath(fromX, fromZ, toX, toZ, maxSlopeDeg, stepSize) {
   const maxZ = Math.ceil(Math.max(fromZ, toZ)) + PATHFIND_MARGIN;
 
   // Grid dimensions — cap to prevent huge allocations on distant targets
-  const gridW = Math.min(Math.ceil((maxX - minX) / stepSize) + 1, 80);
-  const gridH = Math.min(Math.ceil((maxZ - minZ) / stepSize) + 1, 80);
+  const gridW = Math.min(Math.ceil((maxX - minX) / stepSize) + 1, 260);
+  const gridH = Math.min(Math.ceil((maxZ - minZ) / stepSize) + 1, 260);
 
-  // Build surface height grid
+  // Build surface height grid with interpolated heights for smooth slopes.
+  // surfaceProbe returns integer Y (wy+1) for machine placement safety,
+  // but pathfinding needs fractional Y to detect gentle ramp slopes correctly.
   const heights = new Float32Array(gridW * gridH);
   const valid = new Uint8Array(gridW * gridH);
 
@@ -98,7 +100,15 @@ export function findPath(fromX, fromZ, toX, toZ, maxSlopeDeg, stepSize) {
       const probe = surfaceProbe(wx, wz);
       const idx = gx + gz * gridW;
       if (probe) {
-        heights[idx] = probe.y;
+        // Interpolate density at the transition for fractional height
+        const solidY = probe.y - 1; // the solid voxel
+        const solidDens = chunkStore.getVoxel(Math.floor(wx), solidY, Math.floor(wz)).density;
+        const airDens = chunkStore.getVoxel(Math.floor(wx), solidY + 1, Math.floor(wz)).density;
+        const denom = solidDens - airDens;
+        heights[idx] = denom > 0
+          ? solidY + (solidDens - SURFACE_THRESHOLD) / denom
+          : probe.y;
+
         // Check if debris blocks this cell
         const debrisDepth = debrisSystem.getDebrisDepth(wx, wz);
         if (debrisDepth >= DEBRIS_PATHFIND_BLOCK_DEPTH) {

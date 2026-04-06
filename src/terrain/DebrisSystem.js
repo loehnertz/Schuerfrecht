@@ -11,7 +11,7 @@ import {
 import sceneManager from '../rendering/SceneManager.js';
 import { surfaceProbeFrom } from './Traversability.js';
 
-const WORLD_XZ = WORLD_CHUNKS_X * CHUNK_SIZE; // 128
+const WORLD_XZ = WORLD_CHUNKS_X * CHUNK_SIZE;
 
 class DebrisSystem {
   constructor() {
@@ -126,6 +126,13 @@ class DebrisSystem {
         this._heightmap[idx] -= take;
         removed += take;
 
+        // Re-probe floor for remaining debris (terrain may have changed)
+        if (this._heightmap[idx] > DEBRIS_RENDER_THRESHOLD) {
+          this._reprobeBaseY(x, z, idx);
+        } else {
+          this._baseY[idx] = 0;
+        }
+
         const colKey = Math.floor(x / CHUNK_SIZE) + ',' + Math.floor(z / CHUNK_SIZE);
         this._dirtyColumns.add(colKey);
 
@@ -133,6 +140,42 @@ class DebrisSystem {
       }
     }
     return removed;
+  }
+
+  /**
+   * Re-probe and update _baseY for cells near a carve point.
+   * Call this after terrain is carved underneath existing debris.
+   */
+  refreshBaseYNear(wx, wy, wz, radius) {
+    const cx = Math.floor(wx);
+    const cz = Math.floor(wz);
+    const r = Math.ceil(radius) + 2;
+
+    for (let dz = -r; dz <= r; dz++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const x = cx + dx;
+        const z = cz + dz;
+        if (x < 0 || x >= WORLD_XZ || z < 0 || z >= WORLD_XZ) continue;
+
+        const idx = x + z * WORLD_XZ;
+        if (this._heightmap[idx] < DEBRIS_RENDER_THRESHOLD) continue;
+
+        // Re-probe from the old baseY upward
+        this._reprobeBaseY(x, z, idx);
+
+        const colKey = Math.floor(x / CHUNK_SIZE) + ',' + Math.floor(z / CHUNK_SIZE);
+        this._dirtyColumns.add(colKey);
+      }
+    }
+  }
+
+  _reprobeBaseY(x, z, idx) {
+    const oldBase = this._baseY[idx];
+    const startY = oldBase > 0 ? oldBase + 2 : 120;
+    const probe = surfaceProbeFrom(x, startY, z);
+    if (probe) {
+      this._baseY[idx] = probe.y;
+    }
   }
 
   getDebrisDepth(wx, wz) {

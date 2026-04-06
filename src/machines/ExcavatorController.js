@@ -54,6 +54,10 @@ class ExcavatorController {
     this._animTimer = 0;
     this._scoopMaterial = 0;
 
+    // Swing state
+    this._swingNeedsInit = false;
+    this._pendingScoop = false;
+
     // Selection
     this._selected = false;
     this._selectionRing = null;
@@ -76,9 +80,9 @@ class ExcavatorController {
     this._tracks = this.group.userData.tracks;
     this._fillMesh = this.group.userData.fillMesh;
 
-    // Spawn offset from center
-    const centerX = (WORLD_CHUNKS_X * CHUNK_SIZE) / 2 + 6;
-    const centerZ = (WORLD_CHUNKS_Z * CHUNK_SIZE) / 2 + 4;
+    // Spawn offset from center (wider pit = more room)
+    const centerX = (WORLD_CHUNKS_X * CHUNK_SIZE) / 2 + 10;
+    const centerZ = (WORLD_CHUNKS_Z * CHUNK_SIZE) / 2 + 8;
     const surface = surfaceProbe(centerX, centerZ);
 
     if (surface) {
@@ -100,6 +104,7 @@ class ExcavatorController {
     scene.add(this.group);
 
     this._createSelectionRing();
+    this._createIndicators(scene);
     machineRegistry.register(this);
     eventBus.on('input:command', this._onCommand);
 
@@ -143,6 +148,91 @@ class ExcavatorController {
     this.group.add(this._selectionRing);
   }
 
+  _createIndicators(scene) {
+    this._indicatorTime = 0;
+
+    // Scoop indicator — green downward chevron (ring with 3 segments = triangle)
+    const scoopGeo = new THREE.RingGeometry(0.6, 1.0, 3);
+    scoopGeo.rotateX(-Math.PI / 2); // lay flat on ground
+    const scoopMat = new THREE.MeshBasicMaterial({
+      color: 0x44dd66, side: THREE.DoubleSide,
+      transparent: true, opacity: 0.0, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+    });
+    this._scoopIndicator = new THREE.Mesh(scoopGeo, scoopMat);
+    this._scoopIndicator.visible = false;
+    this._scoopIndicator.renderOrder = 1;
+    scene.add(this._scoopIndicator);
+
+    // Dump indicator — orange diamond (ring with 4 segments)
+    const dumpGeo = new THREE.RingGeometry(0.6, 1.0, 4);
+    dumpGeo.rotateX(-Math.PI / 2);
+    const dumpMat = new THREE.MeshBasicMaterial({
+      color: 0xdd8833, side: THREE.DoubleSide,
+      transparent: true, opacity: 0.0, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+    });
+    this._dumpIndicator = new THREE.Mesh(dumpGeo, dumpMat);
+    this._dumpIndicator.visible = false;
+    this._dumpIndicator.renderOrder = 1;
+    scene.add(this._dumpIndicator);
+
+    // Move indicator — blue circle
+    const moveGeo = new THREE.RingGeometry(0.5, 0.8, 16);
+    moveGeo.rotateX(-Math.PI / 2);
+    const moveMat = new THREE.MeshBasicMaterial({
+      color: 0x4488ff, side: THREE.DoubleSide,
+      transparent: true, opacity: 0.0, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+    });
+    this._moveIndicator = new THREE.Mesh(moveGeo, moveMat);
+    this._moveIndicator.visible = false;
+    this._moveIndicator.renderOrder = 1;
+    this._moveTarget = null;
+    scene.add(this._moveIndicator);
+  }
+
+  _updateIndicators(dt) {
+    this._indicatorTime += dt;
+    const pulse = Math.sin(this._indicatorTime * 2.5) * 0.15 + 0.35;
+
+    // Scoop indicator — visible when we have a scoop target and are scooping/approaching
+    const showScoop = this._scoopTarget &&
+      (this.state === 'SCOOPING' || (this.state === 'MOVING' && this._nextStateAfterMove === 'SCOOPING'));
+    if (showScoop) {
+      this._scoopIndicator.visible = true;
+      this._scoopIndicator.position.set(this._scoopTarget.x, this._scoopTarget.y + 0.2, this._scoopTarget.z);
+      this._scoopIndicator.material.opacity = pulse;
+      this._scoopIndicator.rotation.y += dt * 0.8;
+    } else {
+      this._scoopIndicator.visible = false;
+    }
+
+    // Dump indicator — visible when a dump target is set
+    const showDump = this._dumpTarget &&
+      (this.state === 'DUMPING' || this.state === 'SWINGING' ||
+       (this.state === 'MOVING' && this._nextStateAfterMove === 'SWINGING') ||
+       this._bucketLoad > 0);
+    if (showDump) {
+      this._dumpIndicator.visible = true;
+      this._dumpIndicator.position.set(this._dumpTarget.x, this._dumpTarget.y + 0.2, this._dumpTarget.z);
+      this._dumpIndicator.material.opacity = pulse;
+      this._dumpIndicator.rotation.y += dt * 0.8;
+    } else {
+      this._dumpIndicator.visible = false;
+    }
+
+    // Move indicator — blue circle at move destination
+    if (this._moveTarget && this.state === 'MOVING') {
+      this._moveIndicator.visible = true;
+      this._moveIndicator.position.copy(this._moveTarget);
+      this._moveIndicator.material.opacity = Math.sin(this._indicatorTime * 3) * 0.15 + 0.35;
+      this._moveIndicator.rotation.y += dt * 0.8;
+    } else {
+      this._moveIndicator.visible = false;
+    }
+  }
+
   setSelected(selected) {
     this._selected = selected;
     this._selectionRing.visible = selected;
@@ -168,6 +258,9 @@ class ExcavatorController {
     this._lerpJoint(this._elbowPivot, 'x', this._elbowTarget, ARM_JOINT_SPEED * dt);
     this._lerpJoint(this._wristPivot, 'x', this._wristTarget, ARM_JOINT_SPEED * dt);
 
+    // Update target indicators
+    this._updateIndicators(dt);
+
     // Animate turret swing
     const turretDiff = this._turretTargetAngle - this._turretAngle;
     if (Math.abs(turretDiff) > 0.01) {
@@ -192,6 +285,7 @@ class ExcavatorController {
     if (!this._path || this._pathIndex >= this._path.length) {
       this.state = this._nextStateAfterMove;
       this._path = null;
+      this._moveTarget = null;
       return;
     }
 
@@ -205,6 +299,7 @@ class ExcavatorController {
       if (this._pathIndex >= this._path.length) {
         this.state = this._nextStateAfterMove;
         this._path = null;
+        this._moveTarget = null;
         return;
       }
       return;
@@ -278,9 +373,8 @@ class ExcavatorController {
 
     if (t >= 1) {
       if (this._dumpTarget) {
-        // Swing to face dump target
-        this.state = 'SWINGING';
-        this._computeTurretAngleToTarget(this._dumpTarget);
+        // Dump — drive there if needed, then swing+dump
+        this._startDumpSequence();
       } else {
         this.state = 'IDLE';
       }
@@ -288,15 +382,21 @@ class ExcavatorController {
   }
 
   _updateSwinging(dt) {
+    // On entry (first frame): compute turret angle if it hasn't been set yet
+    if (this._swingNeedsInit) {
+      this._swingNeedsInit = false;
+      const target = this._pendingScoop ? this._scoopTarget : this._dumpTarget;
+      if (target) this._computeTurretAngleToTarget(target);
+    }
+
     // Wait for turret to reach target angle
     const diff = Math.abs(this._turretTargetAngle - this._turretAngle);
     if (diff < 0.1) {
       if (this._pendingScoop) {
-        // Auto-cycle: swing completed back to scoop target
+        // Auto-cycle: swing completed, now drive to scoop if needed
         this._pendingScoop = false;
-        this._animTimer = 0;
         this._bucketLoad = 0;
-        this.state = 'SCOOPING';
+        this._startScoopCycle();
       } else {
         this.state = 'DUMPING';
         this._animTimer = 0;
@@ -330,15 +430,9 @@ class ExcavatorController {
     if (t >= 1) {
       // Swing turret back to forward
       this._turretTargetAngle = 0;
-      // Check if more debris at scoop point — auto-cycle
+      // Check if more debris at scoop point — auto-cycle (with range check)
       if (this._scoopTarget && debrisSystem.hasDebrisNear(this._scoopTarget.x, this._scoopTarget.z, 3)) {
-        this._animTimer = 0;
-        this._computeTurretAngleToTarget(this._scoopTarget);
-        // Wait for swing back, then scoop again
-        this.state = 'SWINGING';
-        this._nextStateAfterMove = 'SCOOPING'; // reuse for swing completion
-        // Actually, just go to a small state to wait for turret, then scoop
-        this._pendingScoop = true;
+        this._startScoopCycle();
       } else {
         this.state = 'IDLE';
         this._pendingScoop = false;
@@ -362,6 +456,7 @@ class ExcavatorController {
       case 'cancel':
         this.state = 'IDLE';
         this._path = null;
+        this._moveTarget = null;
         this._bucketLoad = 0;
         this._turretTargetAngle = 0;
         if (this._fillMesh) this._fillMesh.visible = false;
@@ -380,6 +475,8 @@ class ExcavatorController {
       this._path = path;
       this._pathIndex = 1;
       this._nextStateAfterMove = 'IDLE';
+      const dest = path[path.length - 1];
+      this._moveTarget = new THREE.Vector3(dest.x, dest.y + 0.15, dest.z);
       this.state = 'MOVING';
     } else {
       this._flashNoPath();
@@ -390,49 +487,91 @@ class ExcavatorController {
     // Check if there's debris near the target
     if (!debrisSystem.hasDebrisNear(target.x, target.z, 4)) {
       // No debris — treat as a dump target instead
-      this._dumpTarget = new THREE.Vector3(target.x, target.y, target.z);
-      console.debug('[Excavator] dump target set');
+      this._commandSetDump(target);
       return;
     }
 
     this._scoopTarget = new THREE.Vector3(target.x, target.y, target.z);
     this._scoopMaterial = debrisSystem.getDebrisMaterial(target.x, target.z);
 
-    // Check distance — need to be close enough
+    // Check distance — need to be close enough to scoop
+    if (!this._driveToIfFar(target, 6, 4, 'SCOOPING')) {
+      // Within range — start scooping
+      this._computeTurretAngleToTarget(target);
+      this._animTimer = 0;
+      this._bucketLoad = 0;
+      this.state = 'SCOOPING';
+    }
+  }
+
+  _commandSetDump(target) {
+    this._dumpTarget = new THREE.Vector3(target.x, target.y, target.z);
+
+    // If bucket is loaded, start dump sequence (drive if too far)
+    if (this._bucketLoad > 0) {
+      this._startDumpSequence();
+    }
+  }
+
+  _startDumpSequence() {
+    if (!this._dumpTarget) return;
+
+    this._swingNeedsInit = false;
+    if (!this._driveToIfFar(this._dumpTarget, 8, 5, 'SWINGING')) {
+      // Within range — swing turret and dump
+      this._computeTurretAngleToTarget(this._dumpTarget);
+      this.state = 'SWINGING';
+    } else {
+      // Will arrive via MOVING→SWINGING; compute turret angle on arrival
+      this._swingNeedsInit = true;
+    }
+  }
+
+  // Auto-cycle back to scoop target — drives there if too far
+  _startScoopCycle() {
+    if (!this._scoopTarget) { this.state = 'IDLE'; return; }
+
+    this._scoopMaterial = debrisSystem.getDebrisMaterial(this._scoopTarget.x, this._scoopTarget.z);
+
+    if (!this._driveToIfFar(this._scoopTarget, 6, 4, 'SCOOPING')) {
+      // Within range — swing turret and scoop
+      this._computeTurretAngleToTarget(this._scoopTarget);
+      this._animTimer = 0;
+      this._bucketLoad = 0;
+      this.state = 'SCOOPING';
+    }
+  }
+
+  // Drive to target if further than maxDist; approach to approachDist.
+  // Returns true if driving, false if already in range.
+  _driveToIfFar(target, maxDist, approachDist, stateAfterMove) {
     const dx = target.x - this.position.x;
     const dz = target.z - this.position.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
 
-    if (dist > 6) {
-      // Drive closer
-      const dirX = dx / dist;
-      const dirZ = dz / dist;
-      const approachX = target.x - dirX * 4;
-      const approachZ = target.z - dirZ * 4;
+    if (dist <= maxDist) return false;
 
-      const path = findPath(
-        this.position.x, this.position.z,
-        approachX, approachZ,
-        MACHINE_MAX_SLOPE_DEG,
-      );
+    const dirX = dx / dist;
+    const dirZ = dz / dist;
+    const approachX = target.x - dirX * approachDist;
+    const approachZ = target.z - dirZ * approachDist;
 
-      if (path && path.length > 1) {
-        this._path = path;
-        this._pathIndex = 1;
-        this._nextStateAfterMove = 'SCOOPING';
-        this.state = 'MOVING';
-        return;
-      } else {
-        this._flashNoPath();
-        return;
-      }
+    const path = findPath(
+      this.position.x, this.position.z,
+      approachX, approachZ,
+      MACHINE_MAX_SLOPE_DEG,
+    );
+
+    if (path && path.length > 1) {
+      this._path = path;
+      this._pathIndex = 1;
+      this._nextStateAfterMove = stateAfterMove;
+      this.state = 'MOVING';
+      return true;
+    } else {
+      this._flashNoPath();
+      return true; // returning true to prevent immediate action
     }
-
-    // Within range — start scooping
-    this._computeTurretAngleToTarget(target);
-    this._animTimer = 0;
-    this._bucketLoad = 0;
-    this.state = 'SCOOPING';
   }
 
   // --- Helpers ---

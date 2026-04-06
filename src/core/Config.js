@@ -6,9 +6,9 @@ export const SURFACE_THRESHOLD = 128;
 export const WORLD_SEED = 42;
 
 // World extent in chunks
-export const WORLD_CHUNKS_X = 8;
+export const WORLD_CHUNKS_X = 16;
 export const WORLD_CHUNKS_Y = 8;
-export const WORLD_CHUNKS_Z = 8;
+export const WORLD_CHUNKS_Z = 16;
 
 // Carve settings
 export const CARVE_RADIUS = 2.5;
@@ -77,7 +77,7 @@ export const CAMERA_ROTATION_LERP = 0.08;
 export const CAMERA_DISTANCE = 200;
 
 // Lighting
-export const FOG_DENSITY = 0.003;
+export const FOG_DENSITY = 0.002;
 export const AMBIENT_COLOR = 0x0a0a12;
 export const AMBIENT_INTENSITY = 0.15;
 export const SPOT_COLOR = 0xffe8c0;
@@ -97,10 +97,14 @@ export const ORE_PARAMS = {
   [Material.CRYSTAL]:   { minY: 0,  maxY: 30, threshold: 0.80, scale: 0.05 },
 };
 
-// Entrance cavern — large enough for two machines to maneuver freely
-export const ENTRANCE_RADIUS_X = 28;
-export const ENTRANCE_RADIUS_Y = 14;
-export const ENTRANCE_RADIUS_Z = 28;
+// Entrance pit — dome ceiling + flat floor + ramp to surface
+export const ENTRANCE_RADIUS_X = 36;          // dome XZ radius
+export const ENTRANCE_RADIUS_Y = 14;          // dome vertical radius
+export const ENTRANCE_RADIUS_Z = 36;
+export const ENTRANCE_FLOOR_HALF_X = 32;      // flat floor half-extent
+export const ENTRANCE_FLOOR_HALF_Z = 32;
+export const ENTRANCE_RAMP_WIDTH = 20;        // ramp corridor width (Z)
+export const ENTRANCE_RAMP_LENGTH = 90;       // ramp corridor length (X) — ~11° slope
 
 // Worker pool
 export const WORKER_COUNT = 2;
