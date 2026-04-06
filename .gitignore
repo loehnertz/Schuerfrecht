@@ -4,3 +4,4 @@ dist
 *.local
 *.png
 .playwright-mcp/
+.claude/settings.local.json
