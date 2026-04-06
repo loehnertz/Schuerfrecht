@@ -31,6 +31,17 @@ class SelectionManager {
     eventBus.emit('machine:deselected', {});
   }
 
+  selectByIndex(index) {
+    const controllers = machineRegistry.getAllControllers();
+    const target = controllers[index];
+    if (target && target !== this.selected) {
+      this._deselect();
+      this.selected = target;
+      target.setSelected(true);
+      eventBus.emit('machine:selected', { controller: target });
+    }
+  }
+
   _deselect() {
     if (this.selected) {
       this.selected.setSelected(false);

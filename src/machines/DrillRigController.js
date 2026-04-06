@@ -19,13 +19,14 @@ const _UP = new THREE.Vector3(0, 1, 0);
 const _tmpVec = new THREE.Vector3();
 const _drillTipLocal = new THREE.Vector3();
 
-class MachineController {
+class DrillRigController {
   constructor() {
     this.group = null;
     this.position = new THREE.Vector3();
     this.targetRotation = 0;
     this.currentRotation = 0;
     this.state = 'IDLE';
+    this.machineType = 'drill';
 
     // Joints
     this._boomPivot = null;
@@ -769,4 +770,4 @@ class MachineController {
   }
 }
 
-export default new MachineController();
+export { DrillRigController };

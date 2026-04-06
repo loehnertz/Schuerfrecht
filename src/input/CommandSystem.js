@@ -12,14 +12,16 @@ class CommandSystem {
     eventBus.on('input:rightclick', (e) => this._onRightClick(e));
     eventBus.on('input:dragmine', (e) => this._onDragMine(e));
 
-    // Escape to cancel + deselect
-    this._escHandler = (e) => {
+    // Keyboard shortcuts
+    this._keyHandler = (e) => {
       if (e.key === 'Escape') {
         eventBus.emit('input:command', { type: 'cancel' });
         selectionManager.deselect();
+      } else if (e.key >= '1' && e.key <= '9') {
+        selectionManager.selectByIndex(parseInt(e.key) - 1);
       }
     };
-    window.addEventListener('keydown', this._escHandler);
+    window.addEventListener('keydown', this._keyHandler);
   }
 
   _onLeftClick({ point, normal, isTerrain, isMachine, shiftKey }) {
