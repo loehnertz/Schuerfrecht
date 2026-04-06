@@ -1,8 +1,10 @@
 import {
   SURFACE_THRESHOLD, TERRAIN_SURFACE_Y, CHUNK_SIZE,
   WORLD_CHUNKS_Y, PATHFIND_STEP, PATHFIND_MARGIN,
+  DEBRIS_PATHFIND_BLOCK_DEPTH,
 } from '../core/Config.js';
 import chunkStore from '../voxel/ChunkStore.js';
+import debrisSystem from './DebrisSystem.js';
 
 const MAX_PROBE_Y = TERRAIN_SURFACE_Y + 8;
 const MIN_PROBE_Y = 0;
@@ -97,7 +99,13 @@ export function findPath(fromX, fromZ, toX, toZ, maxSlopeDeg, stepSize) {
       const idx = gx + gz * gridW;
       if (probe) {
         heights[idx] = probe.y;
-        valid[idx] = 1;
+        // Check if debris blocks this cell
+        const debrisDepth = debrisSystem.getDebrisDepth(wx, wz);
+        if (debrisDepth >= DEBRIS_PATHFIND_BLOCK_DEPTH) {
+          valid[idx] = 0; // blocked by debris
+        } else {
+          valid[idx] = 1;
+        }
       }
     }
   }

@@ -122,10 +122,14 @@ class VoxelWorld {
 
   /**
    * Carve a sphere at the given world position.
+   * Returns { volume, material } — total volume removed and dominant material.
    */
   carveAt(wx, wy, wz, radius) {
     radius = radius || CARVE_RADIUS;
     const r = Math.ceil(radius) + 1;
+
+    let totalVolume = 0;
+    const materialCounts = {};
 
     for (let dz = -r; dz <= r; dz++) {
       for (let dy = -r; dy <= r; dy++) {
@@ -137,7 +141,7 @@ class VoxelWorld {
           const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
           if (dist > radius + 0.5) continue;
 
-          const { density } = chunkStore.getVoxel(vx, vy, vz);
+          const { density, material } = chunkStore.getVoxel(vx, vy, vz);
 
           // Reduce density based on distance
           let newDensity;
@@ -149,6 +153,11 @@ class VoxelWorld {
           }
 
           if (newDensity < density) {
+            const removed = (density - newDensity) / 255;
+            totalVolume += removed;
+            if (material > 0) {
+              materialCounts[material] = (materialCounts[material] || 0) + removed;
+            }
             chunkStore.setVoxel(vx, vy, vz, newDensity);
           }
         }
@@ -156,6 +165,18 @@ class VoxelWorld {
     }
 
     this.remeshDirty();
+
+    // Find dominant material
+    let dominantMaterial = 0;
+    let maxCount = 0;
+    for (const [mat, count] of Object.entries(materialCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        dominantMaterial = parseInt(mat);
+      }
+    }
+
+    return { volume: totalVolume, material: dominantMaterial };
   }
 }
 

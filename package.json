@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
     "alea": "^1.0.1",
     "simplex-noise": "^4.0.3",
     "three": "^0.170.0"

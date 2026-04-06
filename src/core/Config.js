@@ -97,10 +97,10 @@ export const ORE_PARAMS = {
   [Material.CRYSTAL]:   { minY: 0,  maxY: 30, threshold: 0.80, scale: 0.05 },
 };
 
-// Entrance cavern — wider and flatter for machine maneuvering room
-export const ENTRANCE_RADIUS_X = 18;
-export const ENTRANCE_RADIUS_Y = 12;
-export const ENTRANCE_RADIUS_Z = 18;
+// Entrance cavern — large enough for two machines to maneuver freely
+export const ENTRANCE_RADIUS_X = 28;
+export const ENTRANCE_RADIUS_Y = 14;
+export const ENTRANCE_RADIUS_Z = 28;
 
 // Worker pool
 export const WORKER_COUNT = 2;
@@ -137,3 +137,29 @@ export const MACHINE_CABIN_COLOR = 0xb08a15;   // slightly darker yellow
 export const MACHINE_TRACK_COLOR = 0x1a1a1a;   // near-black rubber
 export const MACHINE_METAL_COLOR = 0x888888;    // metallic gray
 export const MACHINE_ACCENT_COLOR = 0x333333;   // dark accent
+
+// --- Debris system ---
+export const DEBRIS_MAX_DEPTH = 8;              // max debris depth in voxel units
+export const DEBRIS_RENDER_THRESHOLD = 0.1;     // min depth to render
+export const DEBRIS_PATHFIND_BLOCK_DEPTH = 1.5; // depth that blocks machine movement
+export const DEBRIS_BASE_COLOR = [0.50, 0.40, 0.30]; // brownish rubble base color
+export const DEBRIS_SPREAD_RADIUS = 3;          // gaussian spread radius in cells
+
+// --- Hero chunks (Phase 3) ---
+export const HERO_CHUNKS_PER_CARVE_MIN = 3;
+export const HERO_CHUNKS_PER_CARVE_MAX = 10;
+export const HERO_CHUNK_MAX = 50;
+export const HERO_CHUNK_SIZE_MIN = 0.3;
+export const HERO_CHUNK_SIZE_MAX = 0.8;
+export const SETTLE_VELOCITY_THRESHOLD = 0.3;   // m/s — below this, chunk starts settling
+export const SETTLE_TIME = 0.8;                 // seconds at low velocity before merge
+export const MERGE_DURATION = 0.5;              // seconds for scale-to-zero merge animation
+
+// --- Excavator ---
+export const EXCAVATOR_SPEED = 4;               // slightly slower than drill rig
+export const EXCAVATOR_TURN_SPEED = 2.0;
+export const TURRET_SWING_SPEED = 1.0;          // rad/s — heavy mechanical swing
+export const ARM_JOINT_SPEED = 0.8;             // rad/s — deliberate arm movement
+export const SCOOP_VOLUME = 6.0;                // volume per scoop operation
+export const SCOOP_DURATION = 1.2;              // seconds for scoop animation
+export const DUMP_DURATION = 0.8;               // seconds for dump animation
